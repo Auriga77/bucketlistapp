@@ -8,34 +8,56 @@ import {
   Flex,
   View,
   Image,
-  Grid,
   Divider,
 } from "@aws-amplify/ui-react";
 import { Amplify } from "aws-amplify";
 import "@aws-amplify/ui-react/styles.css";
-import { getUrl } from "aws-amplify/storage";
-import { uploadData } from "aws-amplify/storage";
+import { getUrl, uploadData } from "aws-amplify/storage";
 import { generateClient } from "aws-amplify/data";
 import outputs from "../amplify_outputs.json";
-/**
- * @type {import('aws-amplify/data').Client<import('../amplify/data/resource').Schema>}
- */
-
 
 Amplify.configure(outputs);
 const client = generateClient({
   authMode: "userPool",
 });
 
+/* Custom Header for the Login Box */
+const components = {
+  Header() {
+    return (
+      <View textAlign="center" padding="2rem 0 1rem 0">
+        <View
+          style={{
+            backgroundColor: '#FEF3C7', /* Very Light Yellow */
+            color: '#D97706', /* Dark Yellow Text */
+            borderRadius: '50px',
+            padding: '5px 15px',
+            display: 'inline-block',
+            marginBottom: '15px',
+            fontSize: '0.8rem',
+            fontWeight: '700',
+            letterSpacing: '1px'
+          }}
+        >
+          DREAM BIG
+        </View>
+        <Heading level={3} color="#111827" fontWeight="800">
+          Welcome Back
+        </Heading>
+        <Text color="#6B7280" fontSize="0.9rem">
+          Login to manage your bucket list
+        </Text>
+      </View>
+    );
+  },
+};
 
 export default function App() {
   const [items, setItems] = useState([]);
 
-
   useEffect(() => {
     fetchItems();
   }, []);
-
 
   async function fetchItems() {
     const { data: items } = await client.models.BucketItem.list();
@@ -45,151 +67,142 @@ export default function App() {
           const linkToStorageFile = await getUrl({
             path: ({ identityId }) => `media/${identityId}/${item.image}`,
           });
-          console.log(linkToStorageFile.url);
           item.image = linkToStorageFile.url;
         }
         return item;
       })
     );
-    console.log(items);
     setItems(items);
   }
-
 
   async function createItem(event) {
     event.preventDefault();
     const form = new FormData(event.target);
-    console.log(form.get("image").name);
-
-
     const { data: newItem } = await client.models.BucketItem.create({
       title: form.get("title"),
       description: form.get("description"),
       image: form.get("image").name,
     });
 
-
-    console.log(newItem);
     if (newItem.image)
       await uploadData({
         path: ({ identityId }) => `media/${identityId}/${newItem.image}`,
         data: form.get("image"),
       }).result;
 
-
     fetchItems();
     event.target.reset();
   }
 
-
   async function deleteItem({ id }) {
-    const toBeDeletedItem = {
-      id: id,
-    };
-
-
-    const { data: deletedItem } = await client.models.BucketItem.delete(
-      toBeDeletedItem
-    );
-    console.log(deletedItem);
-
-
+    const toBeDeletedItem = { id: id };
+    await client.models.BucketItem.delete(toBeDeletedItem);
     fetchItems();
   }
 
-
   return (
-    <Authenticator>
+    <Authenticator components={components}>
       {({ signOut }) => (
-        <Flex
-          className="App"
-          justifyContent="center"
-          alignItems="center"
-          direction="column"
-          width="70%"
-          margin="0 auto"
-        >
-          <Heading level={1}>My Bucket List</Heading>
-          <View as="form" margin="3rem 0" onSubmit={createItem}>
-            <Flex
-              direction="column"
-              justifyContent="center"
-              gap="2rem"
-              padding="2rem"
-            >
+        <View className="App">
+          {/* Main App Hero Section */}
+          <Heading level={1} className="app-title">
+            Your Bucket List
+          </Heading>
+          <Text className="app-subtitle">
+            Capture your dreams, one at a time.
+          </Text>
+
+          {/* Input Form Card */}
+          <View as="form" onSubmit={createItem} className="form-container">
+            <Flex direction="column" gap="1.5rem">
               <TextField
                 name="title"
-                placeholder="Bucket List Item"
+                placeholder="What do you want to achieve?"
                 label="Bucket List Item"
-                labelHidden
                 variation="quiet"
                 required
               />
               <TextField
                 name="description"
-                placeholder="Description"
+                placeholder="Details (Cost, Date, Plan)"
                 label="Description"
-                labelHidden
                 variation="quiet"
                 required
               />
-              <View
-                name="image"
-                as="input"
-                type="file"
-                alignSelf={"end"}
-                accept="image/png, image/jpeg"
-              />
 
+              {/* File Upload Styling */}
+              <View
+                style={{
+                  border: '2px dashed #E5E7EB',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  textAlign: 'center',
+                  backgroundColor: '#F9FAFB',
+                  cursor: 'pointer'
+                }}
+              >
+                <input
+                  name="image"
+                  type="file"
+                  accept="image/png, image/jpeg"
+                  style={{ width: '100%', color: '#6B7280' }}
+                />
+              </View>
 
               <Button type="submit" variation="primary">
-                Add to Bucket List
+                Add to List
               </Button>
             </Flex>
           </View>
-          <Divider />
-          <Heading level={2}>My Bucket List Items</Heading>
-          <Grid
-            margin="3rem 0"
-            autoFlow="column"
-            justifyContent="center"
-            gap="2rem"
-            alignContent="center"
-          >
+
+          <Divider style={{ margin: '4rem 0', opacity: 0.5 }} />
+
+          <Flex justifyContent="space-between" alignItems="center" marginBottom="2rem">
+            <Heading level={2} color="#111827">
+              Your Goals
+            </Heading>
+            <View
+              backgroundColor="#F3F4F6"
+              padding="5px 15px"
+              borderRadius="20px"
+              color="#6B7280"
+              fontWeight="600"
+            >
+              {items.length} Items
+            </View>
+          </Flex>
+
+          {/* Cards Grid */}
+          <div className="card-grid">
             {items.map((item) => (
-              <Flex
-                key={item.id || item.title}
-                direction="column"
-                justifyContent="center"
-                alignItems="center"
-                gap="2rem"
-                border="1px solid #ccc"
-                padding="2rem"
-                borderRadius="5%"
-                className="box"
-              >
-                <View>
-                  <Heading level="3">{item.title}</Heading>
-                </View>
-                <Text fontStyle="italic">{item.description}</Text>
+              <div key={item.id || item.title} className="box">
+                <Heading level={3}>{item.title}</Heading>
+                <Text fontStyle="italic" color="#6B7280" style={{ marginBottom: '15px', display: 'block' }}>
+                  {item.description}
+                </Text>
+
                 {item.image && (
                   <Image
                     src={item.image}
                     alt={`Visual for ${item.title}`}
-                    style={{ width: 400 }}
+                    className="card-image"
                   />
                 )}
+
                 <Button
-                  variation="destructive"
+                  className="delete-btn"
                   onClick={() => deleteItem(item)}
                 >
-                  Delete Item
+                  Remove
                 </Button>
-              </Flex>
+              </div>
             ))}
-          </Grid>
-          <Button onClick={signOut}>Sign Out</Button>
-        </Flex>
+          </div>
+
+          <Button onClick={signOut} className="sign-out-btn">
+            Sign Out
+          </Button>
+        </View>
       )}
     </Authenticator>
   );
