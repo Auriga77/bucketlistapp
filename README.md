@@ -69,4 +69,4 @@ Follow these steps to run the application on your local machine.
 ## 🚀 Live Demo
 
 Check out the live deployment here: **[Live App Link](https://main.d1yv9vz3vzottb.amplifyapp.com/)** 
-Only for testing purpose "one week trial".
+*(Only for testing purpose "one week trial")*
