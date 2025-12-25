@@ -8,9 +8,7 @@ import {
   Flex,
   View,
   Image,
-  Grid,
   Divider,
-  Card,
 } from "@aws-amplify/ui-react";
 import { Amplify } from "aws-amplify";
 import "@aws-amplify/ui-react/styles.css";
@@ -23,6 +21,39 @@ const client = generateClient({
   authMode: "userPool",
 });
 
+/* Custom Header for the Login Box */
+const components = {
+  Header() {
+    return (
+      <View textAlign="center" padding="2rem 0 1rem 0">
+        <View
+          style={{
+            backgroundColor: '#FEF3C7', /* Very Light Yellow */
+            color: '#D97706', /* Dark Yellow Text */
+            borderRadius: '50px',
+            padding: '5px 15px',
+            display: 'inline-block',
+            marginBottom: '15px',
+            fontSize: '0.8rem',
+            fontWeight: '700',
+            letterSpacing: '1px'
+          }}
+        >
+          DREAM BIG
+        </View>
+        <Heading level={3} color="#111827" fontWeight="800">
+          Welcome Back
+        </Heading>
+        <Text color="#6B7280" fontSize="0.9rem">
+          Login to manage your bucket list
+        </Text>
+      </View>
+    );
+  },
+};
+
+// --- LOGIC MOVED HERE (DASHBOARD COMPONENT) ---
+// This component will be fully reset every time the user switches/logs out
 function Dashboard({ signOut }) {
   const [items, setItems] = useState([]);
 
@@ -54,11 +85,13 @@ function Dashboard({ signOut }) {
       description: form.get("description"),
       image: form.get("image").name,
     });
+
     if (newItem.image)
       await uploadData({
         path: ({ identityId }) => `media/${identityId}/${newItem.image}`,
         data: form.get("image"),
       }).result;
+
     fetchItems();
     event.target.reset();
   }
@@ -69,107 +102,115 @@ function Dashboard({ signOut }) {
     fetchItems();
   }
 
+  // --- RETURNING YOUR ORIGINAL UI ---
   return (
-    <Flex
-      className="App"
-      justifyContent="center"
-      alignItems="center"
-      direction="column"
-      width="100%"
-      maxWidth="800px"
-      margin="0 auto"
-      padding="2rem"
-    >
-      <Heading level={1}>My Bucket List</Heading>
+    <View className="App">
+      {/* Main App Hero Section */}
+      <Heading level={1} className="app-title">
+        Your Bucket List
+      </Heading>
+      <Text className="app-subtitle">
+        Capture your dreams, one at a time.
+      </Text>
 
-      {/* FORM INPUT */}
-      <View as="form" margin="2rem 0" onSubmit={createItem} width="100%">
-        <Flex direction="column" gap="1rem">
+      {/* Input Form Card */}
+      <View as="form" onSubmit={createItem} className="form-container">
+        <Flex direction="column" gap="1.5rem">
           <TextField
             name="title"
-            placeholder="Bucket List Item"
+            placeholder="What do you want to achieve?"
             label="Bucket List Item"
-            labelHidden
             variation="quiet"
             required
           />
           <TextField
             name="description"
-            placeholder="Description"
+            placeholder="Details (Cost, Date, Plan)"
             label="Description"
-            labelHidden
             variation="quiet"
             required
           />
+
+          {/* File Upload Styling */}
           <View
-            name="image"
-            as="input"
-            type="file"
-            accept="image/png, image/jpeg"
-            style={{ padding: "0.5rem" }}
-          />
+            style={{
+              border: '2px dashed #E5E7EB',
+              borderRadius: '12px',
+              padding: '20px',
+              textAlign: 'center',
+              backgroundColor: '#F9FAFB',
+              cursor: 'pointer'
+            }}
+          >
+            <input
+              name="image"
+              type="file"
+              accept="image/png, image/jpeg"
+              style={{ width: '100%', color: '#6B7280' }}
+            />
+          </View>
+
           <Button type="submit" variation="primary">
-            Add to Bucket List
+            Add to List
           </Button>
         </Flex>
       </View>
 
-      <Divider />
-      <Heading level={2} margin="1.5rem 0">My Goals</Heading>
+      <Divider style={{ margin: '4rem 0', opacity: 0.5 }} />
 
-      {/* GRID LAYOUT YANG RAPI */}
-      <Grid
-        templateColumns={{ base: "1fr", medium: "1fr 1fr" }}
-        gap="1.5rem"
-        width="100%"
-      >
+      <Flex justifyContent="space-between" alignItems="center" marginBottom="2rem">
+        <Heading level={2} color="#111827">
+          Your Goals
+        </Heading>
+        <View
+          backgroundColor="#F3F4F6"
+          padding="5px 15px"
+          borderRadius="20px"
+          color="#6B7280"
+          fontWeight="600"
+        >
+          {items.length} Items
+        </View>
+      </Flex>
+
+      {/* Cards Grid */}
+      <div className="card-grid">
         {items.map((item) => (
-          <Card
-            key={item.id || item.title}
-            variation="elevated"
-            borderRadius="medium"
-            padding="1.5rem"
-          >
-            <Flex direction="column" gap="1rem" alignItems="flex-start">
-              <Heading level={4}>{item.title}</Heading>
-              <Text fontSize="0.9rem" color="gray.80">{item.description}</Text>
+          <div key={item.id || item.title} className="box">
+            <Heading level={3}>{item.title}</Heading>
+            <Text fontStyle="italic" color="#6B7280" style={{ marginBottom: '15px', display: 'block' }}>
+              {item.description}
+            </Text>
 
-              {item.image && (
-                <Image
-                  src={item.image}
-                  alt={`Visual for ${item.title}`}
-                  style={{
-                    width: "100%",
-                    height: "200px",
-                    objectFit: "cover",
-                    borderRadius: "8px"
-                  }}
-                />
-              )}
+            {item.image && (
+              <Image
+                src={item.image}
+                alt={`Visual for ${item.title}`}
+                className="card-image"
+              />
+            )}
 
-              <Button
-                variation="destructive"
-                isFullWidth
-                onClick={() => deleteItem(item)}
-                size="small"
-              >
-                Remove
-              </Button>
-            </Flex>
-          </Card>
+            <Button
+              className="delete-btn"
+              onClick={() => deleteItem(item)}
+            >
+              Remove
+            </Button>
+          </div>
         ))}
-      </Grid>
+      </div>
 
-      <Button onClick={signOut} variation="link" marginTop="2rem">
+      <Button onClick={signOut} className="sign-out-btn">
         Sign Out
       </Button>
-    </Flex>
+    </View>
   );
 }
 
+// --- MAIN APP ONLY CALLS AUTHENTICATOR ---
 export default function App() {
   return (
-    <Authenticator>
+    <Authenticator components={components}>
       {({ signOut }) => <Dashboard signOut={signOut} />}
     </Authenticator>
   );
