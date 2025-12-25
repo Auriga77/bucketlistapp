@@ -2,8 +2,6 @@
 
 A full-stack serverless application built with **AWS Amplify Gen 2**, **React (Vite)**, and **TypeScript**. This application allows users to securely manage their life goals (bucket list), utilizing per-user data isolation and cloud storage for image assets.
 
-![App Screenshot](assets/app_demo.png)
-
 ## ✨ Key Features
 
 * **Secure Authentication:** Sign-up, Sign-in, and MFA flows handled by **Amazon Cognito**.
@@ -69,4 +67,5 @@ Follow these steps to run the application on your local machine.
 ## 🚀 Live Demo
 
 Check out the live deployment here: **[Live App Link](https://main.d1yv9vz3vzottb.amplifyapp.com/)** 
-*(Only for testing purpose "one week trial")*
+
+Only for testing purpose "one week trial
