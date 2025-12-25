@@ -10,6 +10,7 @@ import {
   Image,
   Grid,
   Divider,
+  Card,
 } from "@aws-amplify/ui-react";
 import { Amplify } from "aws-amplify";
 import "@aws-amplify/ui-react/styles.css";
@@ -22,8 +23,6 @@ const client = generateClient({
   authMode: "userPool",
 });
 
-// 1. CREATE A NEW COMPONENT FOR THE DASHBOARD CONTENT
-// This component will only render when a User is logged in
 function Dashboard({ signOut }) {
   const [items, setItems] = useState([]);
 
@@ -39,48 +38,34 @@ function Dashboard({ signOut }) {
           const linkToStorageFile = await getUrl({
             path: ({ identityId }) => `media/${identityId}/${item.image}`,
           });
-          console.log(linkToStorageFile.url);
           item.image = linkToStorageFile.url;
         }
         return item;
       })
     );
-    console.log(items);
     setItems(items);
   }
 
   async function createItem(event) {
     event.preventDefault();
     const form = new FormData(event.target);
-    console.log(form.get("image").name);
-
     const { data: newItem } = await client.models.BucketItem.create({
       title: form.get("title"),
       description: form.get("description"),
       image: form.get("image").name,
     });
-
-    console.log(newItem);
     if (newItem.image)
       await uploadData({
         path: ({ identityId }) => `media/${identityId}/${newItem.image}`,
         data: form.get("image"),
       }).result;
-
     fetchItems();
     event.target.reset();
   }
 
   async function deleteItem({ id }) {
-    const toBeDeletedItem = {
-      id: id,
-    };
-
-    const { data: deletedItem } = await client.models.BucketItem.delete(
-      toBeDeletedItem
-    );
-    console.log(deletedItem);
-
+    const toBeDeletedItem = { id: id };
+    await client.models.BucketItem.delete(toBeDeletedItem);
     fetchItems();
   }
 
@@ -90,17 +75,16 @@ function Dashboard({ signOut }) {
       justifyContent="center"
       alignItems="center"
       direction="column"
-      width="70%"
+      width="100%"
+      maxWidth="800px"
       margin="0 auto"
+      padding="2rem"
     >
       <Heading level={1}>My Bucket List</Heading>
-      <View as="form" margin="3rem 0" onSubmit={createItem}>
-        <Flex
-          direction="column"
-          justifyContent="center"
-          gap="2rem"
-          padding="2rem"
-        >
+
+      {/* FORM INPUT */}
+      <View as="form" margin="2rem 0" onSubmit={createItem} width="100%">
+        <Flex direction="column" gap="1rem">
           <TextField
             name="title"
             placeholder="Bucket List Item"
@@ -121,63 +105,68 @@ function Dashboard({ signOut }) {
             name="image"
             as="input"
             type="file"
-            alignSelf={"end"}
             accept="image/png, image/jpeg"
+            style={{ padding: "0.5rem" }}
           />
-
           <Button type="submit" variation="primary">
             Add to Bucket List
           </Button>
         </Flex>
       </View>
+
       <Divider />
-      <Heading level={2}>My Bucket List Items</Heading>
+      <Heading level={2} margin="1.5rem 0">My Goals</Heading>
+
+      {/* GRID LAYOUT YANG RAPI */}
       <Grid
-        margin="3rem 0"
-        autoFlow="column"
-        justifyContent="center"
-        gap="2rem"
-        alignContent="center"
+        templateColumns={{ base: "1fr", medium: "1fr 1fr" }}
+        gap="1.5rem"
+        width="100%"
       >
         {items.map((item) => (
-          <Flex
+          <Card
             key={item.id || item.title}
-            direction="column"
-            justifyContent="center"
-            alignItems="center"
-            gap="2rem"
-            border="1px solid #ccc"
-            padding="2rem"
-            borderRadius="5%"
-            className="box"
+            variation="elevated"
+            borderRadius="medium"
+            padding="1.5rem"
           >
-            <View>
-              <Heading level="3">{item.title}</Heading>
-            </View>
-            <Text fontStyle="italic">{item.description}</Text>
-            {item.image && (
-              <Image
-                src={item.image}
-                alt={`Visual for ${item.title}`}
-                style={{ width: 400 }}
-              />
-            )}
-            <Button
-              variation="destructive"
-              onClick={() => deleteItem(item)}
-            >
-              Delete Item
-            </Button>
-          </Flex>
+            <Flex direction="column" gap="1rem" alignItems="flex-start">
+              <Heading level={4}>{item.title}</Heading>
+              <Text fontSize="0.9rem" color="gray.80">{item.description}</Text>
+
+              {item.image && (
+                <Image
+                  src={item.image}
+                  alt={`Visual for ${item.title}`}
+                  style={{
+                    width: "100%",
+                    height: "200px",
+                    objectFit: "cover",
+                    borderRadius: "8px"
+                  }}
+                />
+              )}
+
+              <Button
+                variation="destructive"
+                isFullWidth
+                onClick={() => deleteItem(item)}
+                size="small"
+              >
+                Remove
+              </Button>
+            </Flex>
+          </Card>
         ))}
       </Grid>
-      <Button onClick={signOut}>Sign Out</Button>
+
+      <Button onClick={signOut} variation="link" marginTop="2rem">
+        Sign Out
+      </Button>
     </Flex>
   );
 }
 
-// 2. MAIN APP COMPONENT BECOMES CLEANER
-// The App's only job is to call the Authenticator
 export default function App() {
   return (
     <Authenticator>
